@@ -1,8 +1,8 @@
 package com.generation.Farmacia.controller;
 
-
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -15,87 +15,87 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.generation.Farmacia.model.Produto;
-import com.generation.Farmacia.repository.CategoriaRepository;
 import com.generation.Farmacia.repository.ProdutoRepository;
 
 import jakarta.validation.Valid;
 
-@RestController
-@RequestMapping("/produtos")
+@RestController 
+@RequestMapping("/produtos") 
 @CrossOrigin(origins = "*", allowedHeaders = "*")
 public class ProdutoController {
-
+	
 	@Autowired
 	private ProdutoRepository produtoRepository;
 	
-	@Autowired
-	private CategoriaRepository categoriaRepository;
-	
 	@GetMapping
 	public ResponseEntity<List<Produto>> getAll(){
-		return ResponseEntity.ok(produtoRepository.findAll());
+		return ResponseEntity.ok(produtoRepository.findAll());		
 	}
 	
 	@GetMapping("/{id}")
-	public ResponseEntity<Produto> getById(@PathVariable Long id) {
-	    return produtoRepository.findById(id)
-	            .map(produto -> ResponseEntity.ok(produto))
-	            .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+	public ResponseEntity<Produto> getById(@PathVariable Long id){
+		
+		return produtoRepository.findById(id)
+				.map(resposta -> ResponseEntity.ok(resposta))
+				.orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).build());	
+	} 
+
+	@GetMapping("/nome/{nome}")
+	public ResponseEntity<List<Produto>> getByNome(@PathVariable String nome){
+		
+		return ResponseEntity.ok(produtoRepository.findAllByNomeContainingIgnoreCase(nome));	
 	}
 	
-	@GetMapping("/nome/{nome}")
-	public ResponseEntity<List<Produto>> getByTitulo(@PathVariable String nome) {
-	    List<Produto> produto = produtoRepository.findAllByNomeContainingIgnoreCase(nome);
-	    /*IF ternario*/
-	    return produto.isEmpty() ? ResponseEntity.status(HttpStatus.NOT_FOUND).build() : ResponseEntity.status(HttpStatus.OK).build();
+	@GetMapping("/nome/{nome}/oulaboratorio/{laboratorio}")
+	public ResponseEntity<List<Produto>> getByNomeOuLaboratorio(@PathVariable String nome, @PathVariable String laboratorio){
+		
+		return ResponseEntity.ok(produtoRepository.findByNomeOrLaboratorioIgnoreCase(nome, laboratorio));	
+	}
+	
+	
+	@GetMapping("/nome/{nome}/elaboratorio/{laboratorio}")
+	public ResponseEntity<List<Produto>> getByNomeELaboratorio(@PathVariable String nome, @PathVariable String laboratorio){
+		
+		return ResponseEntity.ok(produtoRepository.findByNomeAndLaboratorioIgnoreCase(nome, laboratorio));	
+	}
+	
+	@GetMapping("/preco_inicial/{inicio}/preco_final/{fim}")
+	public ResponseEntity<List<Produto>> getByPrecoBetween(@PathVariable BigDecimal inicio, @PathVariable BigDecimal fim){
+		
+		return ResponseEntity.ok(produtoRepository.findByPrecoBetween(inicio, fim));	
 	}
 	
 	@PostMapping
-	public ResponseEntity<Produto> post(@Valid @RequestBody Produto produto) {
-	    if (categoriaRepository.existsById(produto.getCategoria().getId())) {
-	        return ResponseEntity.status(HttpStatus.CREATED).body(produtoRepository.save(produto));
-	    } else {
-	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-	    }
-	}
+	public ResponseEntity<Produto> post(@Valid @RequestBody Produto produto){
 
+		return ResponseEntity.status(HttpStatus.CREATED)
+				.body(produtoRepository.save(produto));
+	}
 	
 	@PutMapping
-	public ResponseEntity<?> put(@Valid @RequestBody Produto produto){
-	    if (!categoriaRepository.existsById(produto.getId())) {
-	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-	    }
-	    return produtoRepository.findById(produto.getId())
-	            .map(resposta -> {
-	            	produtoRepository.save(produto);
-	                return ResponseEntity.status(HttpStatus.OK).build();
-	            })
-	            .orElse(ResponseEntity.status(HttpStatus.BAD_REQUEST).build());
-	}
-	
-	@DeleteMapping("/{id}")
-	public ResponseEntity<?> deleteById(@PathVariable Long id) { 
-		return produtoRepository.findById(id)
-				.map(resposta -> {
-					produtoRepository.deleteById(id);
-					return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
-				})
+	public ResponseEntity<Produto> put(@Valid @RequestBody Produto produto) {
+		return produtoRepository.findById(produto.getId())
+				.map(resposta -> ResponseEntity.status(HttpStatus.OK)
+						.body(produtoRepository.save(produto)))
 				.orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+		
+	}
+	
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	@DeleteMapping("/{id}")
+	public void delete(@PathVariable Long id) {
 
+		Optional<Produto> produto = produtoRepository.findById(id);
+				
+		if(produto.isEmpty())
+				throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+				
+		produtoRepository.deleteById(id);
+		
 	}
-	
-	@GetMapping("/preco_maior/{preco_maior}")
-	public ResponseEntity<Produto> getByPrecoMaior(@PathVariable BigDecimal preco) {
-		return null;
-	}
-	
-	@GetMapping("/preco_menor/{preco_menor}")
-	public ResponseEntity<Produto> getByPrecoMenor(@PathVariable BigDecimal preco) {
-		return null;
-	}
-
-	
 }

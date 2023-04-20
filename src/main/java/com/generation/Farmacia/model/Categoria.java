@@ -16,31 +16,29 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 @Entity
-@Table(name = "tb_categorias")
+@Table(name = "tb_categoria")
 public class Categoria {
 	
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 	
-	@NotBlank(message = "O atributo nome é Obrigatório!")
-	@Size(min = 1, max = 255, message = "O atributo nome deve ter no minimo 10 e no maximo 255 caracteres")
-	private String nome;
+	@NotBlank (message= "O atributo 'descricao' é obrigatório!")
+	@Size(max = 255, message = "O atributo 'descricao' deve ter no máximo 255 caracteres")
+	private String descricao;
 	
+	// Relacionamento com a classe produto
+	@OneToMany(fetch=FetchType.LAZY, mappedBy = "categoria", cascade = CascadeType.REMOVE)
+	@JsonIgnoreProperties("categoria") 
+	private List<Produto> produto;
+
+	//Get e Set
 	public Long getId() {
 		return id;
 	}
 
 	public void setId(Long id) {
 		this.id = id;
-	}
-
-	public String getNome() {
-		return nome;
-	}
-
-	public void setNome(String nome) {
-		this.nome = nome;
 	}
 
 	public String getDescricao() {
@@ -51,19 +49,15 @@ public class Categoria {
 		this.descricao = descricao;
 	}
 
-	@NotBlank(message = "O descricao nome é Obrigatório!")
-	@Size(min = 1, max = 255, message = "O atributo descricao deve ter no minimo 10 e no maximo 255 caracteres")
-	private String descricao;
-	
-	
-	@OneToMany(fetch = FetchType.LAZY, mappedBy = "categoria", cascade = CascadeType.REMOVE)
-	@JsonIgnoreProperties("categoria")
-	private List<Produto> produto;
-
 	public List<Produto> getProduto() {
 		return produto;
 	}
+
 	public void setProduto(List<Produto> produto) {
 		this.produto = produto;
 	}
+	
+	
+	
+
 }
